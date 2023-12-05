@@ -14,13 +14,13 @@ fn main() -> Result<()> {
 }
 
 
-fn part_one(input: &'static str) -> Result<usize> {
+fn part_one(input: &'static str) -> Result<u64> {
     let mut res = 0;
     Ok(res)
 }
 
 
-fn part_two(input: &'static str) -> Result<usize> {
+fn part_two(input: &'static str) -> Result<u64> {
     let mut res = 0;
     Ok(res)
 }
