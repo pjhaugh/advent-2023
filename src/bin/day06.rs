@@ -1,8 +1,8 @@
 use anyhow::Result;
 
 fn main() -> Result<()> {
-    let input = include_str!("../../inputs/input-03-2023.txt");
-    // let input = include_str!("../../inputs/test-03.txt");
+    let input = include_str!("../../inputs/input-06-2023.txt");
+    // let input = include_str!("../../inputs/test-06.txt");
 
     let part_1_ans = part_one(input)?;
     println!("Part One answer: {part_1_ans}");
