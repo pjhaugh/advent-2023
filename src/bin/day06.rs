@@ -67,5 +67,17 @@ fn part_two(input: &'static str) -> Result<u64> {
         .replace(" ", "")
         .parse()?;
 
-    Ok((0..time).filter(|t| t * (time - t) > distance).count() as u64)
+    let mut res = 0;
+    let mut winning = false;
+
+    for t in 0..time {
+        if t * (time - t) > distance {
+            res += 1;
+            winning = true;
+        } else if winning {
+            break
+        }
+    }
+
+    Ok(res)
 }
