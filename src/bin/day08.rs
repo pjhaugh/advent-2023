@@ -107,37 +107,30 @@ fn part_two(input: &'static str) -> Result<u64> {
         );
     }
 
-    let mut currs: Vec<&&str> = graph.keys().filter(|s| s.ends_with("A")).collect();
-    let mut opts: Vec<Option<u64>> = vec![None; currs.len()];
-
-    loop {
-        for dir in &moves {
-            res += 1;
-            let mut repl: Vec<&&str> = Default::default();
-            for (index, curr) in currs.iter().enumerate() {
+    let periods = graph.keys().filter(|s| s.ends_with("A")).map(|curr| {
+        let mut res = 0;
+        let mut curr = curr;
+        loop {
+            for dir in &moves {
+                res += 1;
                 let (left, right) = graph.get(*curr).unwrap();
                 let dest = match dir {
                     Dirs::LEFT => left,
                     Dirs::RIGHT => right,
                 };
-                repl.push(dest);
-                if dest.ends_with("Z") && opts[index].is_none() {
-                    opts[index] = Some(res);
-                }
+                curr = dest;
+                if dest.ends_with("Z") {return res}
             }
-            if opts.iter().all(|o| o.is_some()) {
-                // return Ok(0)
-                return Ok(lcm(opts));
-            }
-            currs = repl;
         }
-    }
+    }).collect();
+
+    Ok(lcm(periods))
 }
 
-fn lcm(opts: Vec<Option<u64>>) -> u64 {
+fn lcm(vals: Vec<u64>) -> u64 {
     let mut res = 1_u64;
-    for val in opts {
-        res = res.lcm(&val.unwrap());
+    for val in &vals {
+        res = res.lcm(val);
     }
     res
 }
