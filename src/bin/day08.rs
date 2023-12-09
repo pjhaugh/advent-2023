@@ -3,8 +3,10 @@ use std::ops::Deref;
 use std::str::FromStr;
 
 use anyhow::{bail, Result};
-use num::Integer;
 use regex::Regex;
+
+mod utils;
+use utils::utils::lcm;
 
 #[derive(Debug)]
 enum Dirs {
@@ -82,8 +84,6 @@ fn part_one(input: &'static str) -> Result<u64> {
 }
 
 fn part_two(input: &'static str) -> Result<u64> {
-    let mut res = 0;
-
     let mut lines = input.lines();
 
     let moves: Vec<Dirs> = lines
@@ -110,27 +110,18 @@ fn part_two(input: &'static str) -> Result<u64> {
     let periods = graph.keys().filter(|s| s.ends_with("A")).map(|curr| {
         let mut res = 0;
         let mut curr = curr;
-        loop {
-            for dir in &moves {
-                res += 1;
-                let (left, right) = graph.get(*curr).unwrap();
-                let dest = match dir {
-                    Dirs::LEFT => left,
-                    Dirs::RIGHT => right,
-                };
-                curr = dest;
-                if dest.ends_with("Z") {return res}
-            }
+        for dir in moves.iter().cycle() {
+            res += 1;
+            let (left, right) = graph.get(*curr).unwrap();
+            let dest = match dir {
+                Dirs::LEFT => left,
+                Dirs::RIGHT => right,
+            };
+            curr = dest;
+            if dest.ends_with("Z") { return res; }
         }
+        res
     }).collect();
 
     Ok(lcm(periods))
-}
-
-fn lcm(vals: Vec<u64>) -> u64 {
-    let mut res = 1_u64;
-    for val in &vals {
-        res = res.lcm(val);
-    }
-    res
 }
