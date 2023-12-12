@@ -36,8 +36,8 @@ fn parse_line(input: &str) -> Result<(Vec<Spring>, Vec<u64>)> {
 
 fn parse_line_two(input: &str) -> Result<(Vec<Spring>, Vec<u64>)> {
     let (springs, groups) = input.split_once(" ").expect("Split");
-    let springs = format!("{}?{}?{}?{}?{}", springs, springs, springs, springs, springs);
-    let groups = format!("{},{},{},{},{}", groups, groups, groups, groups, groups);
+    let springs = std::iter::repeat(springs).take(5).join("?");
+    let groups = std::iter::repeat(groups).take(5).join(",");
 
     Ok((springs.chars().map(Spring::try_from).collect::<Result<Vec<Spring>>>()?,
         groups.split(",").map(u64::from_str).collect::<Result<Vec<u64>, ParseIntError>>()?))
