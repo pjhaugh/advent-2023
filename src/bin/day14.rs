@@ -1,5 +1,4 @@
-use std::cmp::Ordering;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 use std::ops::{Add, Rem};
 
 use anyhow::Result;
@@ -36,21 +35,32 @@ fn main() -> Result<()> {
 }
 
 fn parse(input: &str) -> Map {
-    let rocks = input.lines().enumerate().flat_map(|(row, line)| {
-        line.chars().enumerate().filter(|(col, c)| ['O', '#'].contains(c)).map(move |(col, c)|
-            (
-                I64Vec2::new(col as i64, row as i64),
-                match c {
-                    'O' => Round,
-                    '#' => Square,
-                    _ => panic!("Bad input {c} at {row} {col}")
-                }
-            )
-        )
-    }).collect();
+    let rocks = input
+        .lines()
+        .enumerate()
+        .flat_map(|(row, line)| {
+            line.chars()
+                .enumerate()
+                .filter(|(col, c)| ['O', '#'].contains(c))
+                .map(move |(col, c)| {
+                    (
+                        I64Vec2::new(col as i64, row as i64),
+                        match c {
+                            'O' => Round,
+                            '#' => Square,
+                            _ => panic!("Bad input {c} at {row} {col}"),
+                        },
+                    )
+                })
+        })
+        .collect();
     let height = input.lines().count() as i64;
     let width = input.lines().next().unwrap().len() as i64;
-    Map { rocks, height, width }
+    Map {
+        rocks,
+        height,
+        width,
+    }
 }
 
 fn roll(map: &mut Map, dir: &I64Vec2) {
@@ -58,18 +68,22 @@ fn roll(map: &mut Map, dir: &I64Vec2) {
         let mut to_del: Vec<Point> = Default::default();
 
         for (point, rock) in map.rocks.iter() {
-            let p2 = point.add(*dir);
-            if map.rocks.contains_key(&p2)
-                || *rock == Square
-                || p2.x < 0
-                || p2.x >= map.width
-                || p2.y < 0
-                || p2.y >= map.height { continue; }
-
-            to_del.push(point.clone());
+            let mut p2 = point.add(*dir);
+            while !map.rocks.contains_key(&p2)
+                && *rock != Square
+                && p2.x >= 0
+                && p2.x < map.width
+                && p2.y >= 0
+                && p2.y < map.height
+            {
+                to_del.push(point.clone());
+                p2 = p2.add(*dir);
+            }
         }
 
-        if to_del.is_empty() { return; }
+        if to_del.is_empty() {
+            return;
+        }
 
         for p in &to_del {
             map.rocks.remove(p);
@@ -80,24 +94,25 @@ fn roll(map: &mut Map, dir: &I64Vec2) {
 
 fn print_map(map: &Map) {
     for row in 0..map.height {
-        let line = (0..map.width).map(|col|
-            match map.rocks.get(&I64Vec2::new(col, row)) {
-                None => { "." }
-                Some(Round) => { "O" }
-                Some(Square) => { "#" }
-            }
-        ).join("");
+        let line = (0..map.width)
+            .map(|col| match map.rocks.get(&I64Vec2::new(col, row)) {
+                None => ".",
+                Some(Round) => "O",
+                Some(Square) => "#",
+            })
+            .join("");
         println!("{}", line);
     }
 }
 
 fn load(map: &Map) -> i64 {
-    map.rocks.iter().filter_map(|(p, r)| {
-        match r {
-            Round => { Some(map.height - p.y) }
-            Square => { None }
-        }
-    }).sum::<i64>()
+    map.rocks
+        .iter()
+        .filter_map(|(p, r)| match r {
+            Round => Some(map.height - p.y),
+            Square => None,
+        })
+        .sum::<i64>()
 }
 
 fn part_one(input: &'static str) -> Result<i64> {
@@ -108,7 +123,6 @@ fn part_one(input: &'static str) -> Result<i64> {
     Ok(load(&map))
 }
 
-
 fn part_two(input: &'static str) -> Result<i64> {
     let mut map = parse(input);
     const NORTH: I64Vec2 = I64Vec2::new(0, -1);
@@ -116,7 +130,7 @@ fn part_two(input: &'static str) -> Result<i64> {
     const EAST: I64Vec2 = I64Vec2::new(1, 0);
     const WEST: I64Vec2 = I64Vec2::new(-1, 0);
 
-    let mut hist: HashMap<BTreeSet<(i64, i64)>, (usize, i64)> = Default::default();
+    let mut hist: HashMap<BTreeSet<(i64, i64)>, usize> = Default::default();
     let mut loads: Vec<_> = Default::default();
     let mut index: Option<usize> = None;
 
@@ -125,17 +139,19 @@ fn part_two(input: &'static str) -> Result<i64> {
         roll(&mut map, &WEST);
         roll(&mut map, &SOUTH);
         roll(&mut map, &EAST);
-        let state = map.rocks.iter().filter_map(|(p, r)|
-            match r {
+        let state = map
+            .rocks
+            .iter()
+            .filter_map(|(p, r)| match r {
                 Round => Some((p.x, p.y)),
-                _ => None
-            }
-        ).collect();
-        if let Some((val, _)) = hist.get(&state) {
+                _ => None,
+            })
+            .collect();
+        if let Some(val) = hist.get(&state) {
             index = Some(*val);
             break;
         }
-        hist.insert(state, (i, load(&map)));
+        hist.insert(state, i);
         loads.push(load(&map));
     }
 
