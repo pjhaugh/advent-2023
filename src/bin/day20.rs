@@ -10,6 +10,8 @@ use nom::sequence::preceded;
 
 use crate::Module::{Broadcast, Conjunction, Flip};
 
+mod utils;
+
 #[derive(Debug, Clone)]
 enum Module {
     Flip(bool, Vec<&'static str>),
@@ -176,6 +178,5 @@ fn part_two(input: &'static str) -> Result<u64> {
             break;
         }
     }
-
-    Ok(cycles.values().product::<u64>())
+    Ok(utils::utils::lcm(cycles.values().map(|u| *u).collect()))
 }
