@@ -66,7 +66,13 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn process_signal(modules: &mut HashMap<&str, Module>, queue: &mut VecDeque<(&'static str, (&'static str, bool))>, finished: &mut bool, num_low: &mut u64, num_high: &mut u64) {
+fn process_signal(modules: &mut HashMap<&str, Module>,
+                  queue: &mut VecDeque<(&'static str, (&'static str, bool))>,
+                  num_low: &mut u64,
+                  num_high: &mut u64,
+                  cycles: &mut HashMap<&str, u64>,
+                  count: &u64
+) {
     if let Some((name, (upstream, signal))) = queue.pop_front() {
         // println!("{upstream} -{}-> {name}", if signal {"high"} else {"low"});
         if let Some(module) = modules.get_mut(name) {
@@ -95,6 +101,11 @@ fn process_signal(modules: &mut HashMap<&str, Module>, queue: &mut VecDeque<(&'s
                     dests.iter().for_each(|d| {
                         queue.push_back((d, (name, output)));
                         if output {
+                            cycles.iter_mut().for_each(|(k, v)|
+                                if k == &name {
+                                    *v = *count;
+                                }
+                            );
                             *num_high += 1;
                         } else {
                             *num_low += 1;
@@ -114,10 +125,6 @@ fn process_signal(modules: &mut HashMap<&str, Module>, queue: &mut VecDeque<(&'s
             }
 
 
-        } else {
-            if !signal {
-                *finished = true;
-            }
         }
     } else {
         panic!("Called on empty queue");
@@ -128,15 +135,18 @@ fn part_one(input: &'static str) -> Result<u64> {
     let mut mods = parse_modules(input)?;
     let mut num_low = 0;
     let mut num_high = 0;
+    let mut count = 0;
     let mut finished = false;
 
     let mut queue: VecDeque<(&'static str, (&'static str, bool))> = Default::default();
+    let mut cycles = HashMap::from([("nl", 0), ("lr", 0), ("gt", 0), ("vr", 0)]);
 
     for _ in 0..1000 {
         queue.push_back(("broadcaster", ("button", false)));
         num_low += 1;
         while !queue.is_empty() {
-            process_signal(&mut mods, &mut queue, &mut finished, &mut num_low, &mut num_high);
+            process_signal(&mut mods, &mut queue,
+                            &mut num_low, &mut num_high, &mut cycles, &count);
         }
     }
 
@@ -148,22 +158,24 @@ fn part_two(input: &'static str) -> Result<u64> {
     let mut mods = parse_modules(input)?;
     let mut num_low = 0;
     let mut num_high = 0;
-    let mut finished = false;
-    let mut res = 0;
+    let mut button_count = 0;
 
     let mut queue: VecDeque<(&'static str, (&'static str, bool))> = Default::default();
+
+    let mut cycles = HashMap::from([("nl", 0), ("lr", 0), ("gt", 0), ("vr", 0)]);
+
 
     loop {
         queue.push_back(("broadcaster", ("button", false)));
         num_low += 1;
-        res += 1;
+        button_count += 1;
         while !queue.is_empty() {
-            process_signal(&mut mods, &mut queue, &mut finished, &mut num_low, &mut num_high);
+            process_signal(&mut mods, &mut queue, &mut num_low, &mut num_high, &mut cycles, &button_count);
         }
-        if finished {
+        if cycles.values().all(|x| x != &0) {
             break;
         }
     }
 
-    Ok(res)
+    Ok(cycles.values().product::<u64>())
 }
